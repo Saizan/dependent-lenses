@@ -571,6 +571,57 @@ lenses-equal-if-setters-equal-and-remainder-propositional
       (λ b → remainder l₂ (_≃_.from (equiv l₁) (r , b)))
       (inhabited l₁ r)
 
+
+lenses-equal-if-setters-equal-and-remainder-set :
+  {A : Set a} {B : Set b} →
+  Univalence (a ⊔ b) →
+  (l₁ l₂ : Lens A B) →
+  Is-set (Lens.R l₂) →
+  Lens.set l₁ ≡ Lens.set l₂ →
+  l₁ ≡ l₂
+lenses-equal-if-setters-equal-and-remainder-set {A = A} {B = B}
+  univ l₁ l₂ R₂-set setters-equal =
+
+  lenses-equal-if-setters-equal′
+    univ l₁ l₂ f
+    (λ b r →
+         b
+       , (remainder l₂ (_≃_.from (equiv l₁) (r , b))  ≡⟨ sym (f-beta b r) ⟩∎
+          f r                                         ∎))
+    (λ a →
+       f (remainder l₁ a)  ≡⟨ f-beta (get l₁ a) (remainder l₁ a)  ⟩
+       remainder l₂ (_≃_.from (equiv l₁) (remainder l₁ a , get l₁ a)) ≡⟨ cong (remainder l₂) (_≃_.left-inverse-of (equiv l₁) a) ⟩
+       remainder l₂ a      ∎)
+    setters-equal
+  where
+  open Lens
+  postulate
+    recTrunc-Set : ∀ {a} {A : Set a} {p} {P : Set p} (sP : Is-set P)
+      → (f : A → P)
+      → (kf : ∀ x y → f x ≡ f y)
+      → (t : ∥ A ∥) → P
+    recTrunc-Set-beta : ∀ {a} {A : Set a} {p} {P : Set p} (sP : Is-set P)
+      → (f : A → P)
+      → (kf : ∀ x y → f x ≡ f y)
+      → (t : ∥ A ∥)
+      → (a : A) → recTrunc-Set sP f kf t ≡ f a
+  f : R l₁ → R l₂
+  f r = recTrunc-Set R₂-set g g-const (inhabited l₁ r)
+    where
+      g : B → R l₂
+      g = (\ b → remainder l₂ (_≃_.from (equiv l₁) (r , b)))
+      g-const : ∀ b b' → g b ≡ g b'
+      g-const b b' =
+        remainder l₂ v                                           ≡⟨ sym (remainder-set l₂ v b') ⟩
+        remainder l₂ (set l₂ v b')                               ≡⟨ cong (remainder l₂) (cong (\ f → f v b') (sym setters-equal)) ⟩
+        remainder l₂ (_≃_.from (equiv l₁) (remainder l₁ v , b')) ≡⟨ cong (remainder l₂) (cong (_≃_.from (equiv l₁)) (cong (\ r → r , b')
+                                                                         (cong proj₁ (_≃_.right-inverse-of (equiv l₁) (r , b))))) ⟩
+        remainder l₂ (_≃_.from (equiv l₁) (r , b')) ∎
+        where
+          v = (_≃_.from (equiv l₁) (r , b))
+  f-beta : ∀ b r → f r ≡ remainder l₂ (_≃_.from (equiv l₁) (r , b))
+  f-beta b r = recTrunc-Set-beta _ _ _ _ b
+
 -- The functions ≃→lens and ≃→lens′ are pointwise equal (when
 -- applicable, assuming univalence).
 
